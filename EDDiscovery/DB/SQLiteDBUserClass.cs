@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
+using System.Globalization;
 
 namespace EDDiscovery.DB
 {
@@ -70,6 +71,9 @@ namespace EDDiscovery.DB
 
                 if (dbver < 109)
                     UpgradeUserDB109(conn);
+
+                if (dbver < 110)
+                    UpgradeUserDB110(conn);
 
                 CreateUserDBTableIndexes();
 
@@ -287,6 +291,13 @@ namespace EDDiscovery.DB
             EDDiscovery2.DB.MaterialCommodities.SetUpInitialTable();
         }
 
+        private static void UpgradeUserDB110(SQLiteConnectionUser conn)
+        {
+            string query1 = "ALTER TABLE Commanders ADD COLUMN EdsmName TEXT";
+            string query2 = "ALTER TABLE MaterialsCommodities ADD COLUMN ShortName TEXT NOT NULL COLLATE NOCASE DEFAULT ''";
+            SQLiteDBClass.PerformUpgrade(conn, 110, true, false, new[] { query1, query2 });
+        }
+
         private static void DropOldUserTables(SQLiteConnectionUser conn)
         {
             string[] queries = new[]
@@ -469,8 +480,9 @@ namespace EDDiscovery.DB
                             cmd.AddParameterWithValue("@et", "FSDJump");
 
                             JObject je = new JObject();
+                            DateTime eventtime = DateTime.SpecifyKind((DateTime)array[1], DateTimeKind.Local).ToUniversalTime();
 
-                            je["timestamp"] = DateTime.SpecifyKind((DateTime)array[1], DateTimeKind.Local).ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'");
+                            je["timestamp"] = eventtime.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'");
                             je["event"] = "FSDJump";
                             je["StarSystem"] = ((string)array[0]);
 
@@ -485,7 +497,7 @@ namespace EDDiscovery.DB
                             }
 
                             je["EDDMapColor"] = ((long)array[5]);
-                            cmd.AddParameterWithValue("@etime", (DateTime)je["timestamp"]);
+                            cmd.AddParameterWithValue("@etime", eventtime);
                             cmd.AddParameterWithValue("@edata", je.ToString());    // order number - look at the dbcommand above
 
                             long edsmid = 0;
