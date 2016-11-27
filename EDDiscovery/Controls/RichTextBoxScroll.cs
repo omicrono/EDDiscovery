@@ -31,7 +31,8 @@ namespace ExtendedControls
         public bool ShowLineCount { get; set; } = false;                // count lines
         public bool HideScrollBar { get; set; } = true;                   // hide if no scroll needed
 
-        public override string Text { get { return TextBox.Text; } set { TextBox.Text = value; } }                // return only textbox text
+        public override string Text { get { return TextBox.Text; } set { TextBox.Text = value; UpdateScrollBar(); } }                // return only textbox text
+        public int LineCount { get { return TextBox.Lines.Count(); } }
 
         public RichTextBoxBack TextBox;                 // Use these with caution.
         public VScrollBarCustom ScrollBar;
@@ -56,7 +57,7 @@ namespace ExtendedControls
             }
             TextBox.AppendText(s);
             TextBox.ScrollToCaret();
-            UpdateVscroll();
+            UpdateScrollBar();
         }
 
         public void AppendText(string s, Color c)
@@ -75,7 +76,7 @@ namespace ExtendedControls
             TextBox.SelectionStart = TextBox.TextLength;
             TextBox.SelectionLength = 0;
             TextBox.ScrollToCaret();
-            UpdateVscroll();
+            UpdateScrollBar();
         }
 
         public void CopyFrom( RichTextBoxScroll other )
@@ -145,26 +146,65 @@ namespace ExtendedControls
             base.OnLayout(levent);
 
             int bordersize = (BorderColor != Color.Transparent) ? 3 : 0;
-            int controlh = ClientRectangle.Height - bordersize * 2;
 
-            int texth = controlh;
-            int pxsize = TextBox.Font.Height;
-            if (pxsize < 16)                            // this is what has been measured across FONTs, not sure why, not sure
-                pxsize++;                               // if I can progamatically find it out..
-            else if (pxsize >= 19)                      // Height lies, at 12 point, it says 19, but its only spacing the lines at 18.
-                pxsize--;                               // tested MS Sans, Eurocaps, Calisto
+            int textboxclienth = ClientRectangle.Height - bordersize * 2;       // border is within Client area
+            int linesinbox = EstimateLinesInBox(textboxclienth);
 
-            textboxlinesestimate = texth / pxsize;
-            UpdateVscroll();
+            int firstVisibleLine = unchecked((int)(long)TextBox.SendMessage(EM_GETFIRSTVISIBLELINE, (IntPtr)0, (IntPtr)0));
+            ScrollBar.SetValueMaximumLargeChange(firstVisibleLine, LineCount - 1, linesinbox);
 
             visibleonlayout = ScrollBar.IsScrollBarOn || DesignMode || !HideScrollBar;  // Hide must be on, or in design mode, or scroll bar is on due to values
 
             TextBox.Location = new Point(bordersize, bordersize);
-            TextBox.Size = new Size(ClientRectangle.Width - (visibleonlayout? ScrollBarWidth :0) - bordersize * 2, controlh);
-            ScrollBar.Location = new Point(ClientRectangle.Width - ScrollBarWidth - bordersize, bordersize);
-            ScrollBar.Size = new Size(ScrollBarWidth, controlh);
+            TextBox.Size = new Size(ClientRectangle.Width - (visibleonlayout ? ScrollBarWidth : 0) - bordersize * 2, textboxclienth);
 
-            //Console.WriteLine("With Font " + TextBox.Font.Name + ":" + TextBox.Font.Size + " Estimate " + textboxlinesestimate + " from " + TextBox.Size.Height + " est size " + pxsize);
+            //System.Diagnostics.Debug.WriteLine("text box size " + textboxclienth + " Lines " + linesinbox );
+
+            ScrollBar.Location = new Point(ClientRectangle.Width - ScrollBarWidth - bordersize, bordersize);
+            ScrollBar.Size = new Size(ScrollBarWidth, textboxclienth);
+            
+            //System.Diagnostics.Debug.WriteLine("layout Scroll State Lines: " + LineCount + " FVL: " + firstVisibleLine + " textlines " + textboxlinesestimate);
+        }
+
+        private void UpdateScrollBar()            // from the richtext, set the scroll bar
+        {
+            int bordersize = (BorderColor != Color.Transparent) ? 3 : 0;
+            int textboxclienth = ClientRectangle.Height - bordersize * 2;
+            int linesinbox = EstimateLinesInBox(textboxclienth);
+
+            int firstVisibleLine = unchecked((int)(long)TextBox.SendMessage(EM_GETFIRSTVISIBLELINE, (IntPtr)0, (IntPtr)0));
+
+            //System.Diagnostics.Debug.WriteLine("Scroll State Lines: " + LineCount+ " FVL: " + firstVisibleLine + " textlines " + textboxlinesestimate);
+
+            ScrollBar.SetValueMaximumLargeChange(firstVisibleLine, LineCount - 1, linesinbox );
+
+            if (ScrollBar.IsScrollBarOn != visibleonlayout)     // need to relayout if scroll bars pop on
+                PerformLayout();
+        }
+
+        public double GetRealFontHeight()
+        {
+            int h = FontHeight;
+            if (h > 16)     // FUDGE - seems to show 1 below. measured.
+                h++;
+            return h;
+        }
+
+        public int EstimateLinesInBox(int height)
+        {
+            int lines = (int)(height/ GetRealFontHeight());
+            //System.Diagnostics.Debug.WriteLine("Est Lines " + lines + " on " + height + " on " + FontHeight);
+            return lines;
+        }
+
+        public int EstimateVerticalSizeFromText()
+        {
+            int numberlines = TextBox.Lines.Count();
+            int bordersize = (BorderColor != Color.Transparent) ? 3 : 0;
+            double fonth = GetRealFontHeight();
+            int pixels = (int)( fonth * numberlines) + bordersize * 2 + 4;      // 4 extra for border area of this (bounds-client rect)
+            //System.Diagnostics.Debug.WriteLine("Est Box " + numberlines + " " + bordersize + " " + fonth + " " + pixels + " " );
+            return pixels;
         }
 
         const int EM_GETFIRSTVISIBLELINE = 0x00CE;
@@ -173,7 +213,7 @@ namespace ExtendedControls
 
         protected virtual void OnVscrollChanged(object sender, EventArgs e) // comes from TextBox, update scroll..
         {
-            UpdateVscroll();
+            UpdateScrollBar();
         }
 
         protected virtual void OnScrollBarChanged(object sender, ScrollEventArgs e)
@@ -185,17 +225,6 @@ namespace ExtendedControls
         {
             base.OnGotFocus(e);
             TextBox.Focus();
-        }
-
-        private void UpdateVscroll()            // from the richtext, set the scroll bar
-        {
-            int firstVisibleLine = unchecked((int)(long)TextBox.SendMessage(EM_GETFIRSTVISIBLELINE, (IntPtr)0, (IntPtr)0));
-            int linecount = unchecked((int)(long)TextBox.SendMessage(EM_GETLINECOUNT, (IntPtr)0, (IntPtr)0));
-            //Console.WriteLine("Scroll State Lines: " + linecount + " FVL: " + firstVisibleLine + " textlines " + textboxlinesestimate );
-            ScrollBar.SetValueMaximumLargeChange(firstVisibleLine, linecount - 1, textboxlinesestimate);
-
-            if (ScrollBar.IsScrollBarOn != visibleonlayout)     // need to relayout if scroll bars pop on
-                PerformLayout();
         }
 
         private void ScrollToBar()              // from the scrollbar, scroll first line to value
@@ -229,11 +258,25 @@ namespace ExtendedControls
 
         #endregion
 
-        private int textboxlinesestimate = 1;
         private int lc = 1;
         private byte limit(float a) { if (a > 255F) return 255; else return (byte)a; }
         public Color Multiply(Color from, float m) { return Color.FromArgb(from.A, limit((float)from.R * m), limit((float)from.G * m), limit((float)from.B * m)); }
 
+        private void InitializeComponent()
+        {
+            this.SuspendLayout();
+            // 
+            // RichTextBoxScroll
+            // 
+            this.Resize += new System.EventHandler(this.RichTextBoxScroll_Resize);
+            this.ResumeLayout(false);
+
+        }
+
+        private void RichTextBoxScroll_Resize(object sender, EventArgs e)
+        {
+            System.Diagnostics.Debug.WriteLine("Resize" + Size);
+        }
     }
 }
 

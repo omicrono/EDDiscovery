@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -14,10 +15,11 @@ namespace EDDiscovery.Forms
 {
     public partial class UserControlForm : Form
     {
-        UserControlCommonBase uc;
+        public UserControlCommonBase UserControl;
         public bool isactive = false;
         public bool norepositionwindow = false;
         public string refname;
+        public string wintitle;
 
         public UserControlForm()
         {
@@ -28,21 +30,39 @@ namespace EDDiscovery.Forms
 
         public void Init(string title, bool winborder, bool topmost, string rf)
         {
-            Text = title;
+            wintitle = Text = title;
             refname = rf;
             windowsborder = winborder;
             FormBorderStyle = winborder ? FormBorderStyle.Sizable : FormBorderStyle.None;
             panel_close.Visible = !winborder;
             panel_minimize.Visible = !winborder;
+            panel_ontop.Visible = !winborder;
             label_index.Visible = !winborder;
+            labelControlText.Visible = false;
+            labelControlText.Text = "";
             label_index.Text = this.Text;
             TopMost = topmost;
+            panel_ontop.ImageSelected = TopMost ? ExtendedControls.DrawnPanel.ImageType.OnTop : ExtendedControls.DrawnPanel.ImageType.Floating;
             Invalidate();
+        }
+
+        public void SetControlText(string text)
+        {
+            if ( FormBorderStyle == FormBorderStyle.None )
+            {
+                labelControlText.Location = new Point(label_index.Location.X + label_index.Width + 16, labelControlText.Location.Y);
+                labelControlText.Visible = true;
+                labelControlText.Text = text;
+            }
+            else
+            {
+                this.Text = wintitle + " " + text;
+            }
         }
 
         public void AddUserControl(EDDiscovery.UserControls.UserControlCommonBase c)
         {
-            uc = c;
+            UserControl = c;
             c.Dock = DockStyle.None;
             c.Location = new Point(0, 10);
             c.Size = new Size(200, 200);
@@ -52,8 +72,8 @@ namespace EDDiscovery.Forms
         private void UserControlForm_Activated(object sender, EventArgs e)
         {
             isactive = true;
-            if (uc != null)
-                uc.LoadLayout();
+            if (UserControl != null)
+                UserControl.LoadLayout();
         }
 
         private void UserControlForm_Load(object sender, EventArgs e)
@@ -93,9 +113,8 @@ namespace EDDiscovery.Forms
         {
             isactive = false;
 
-            if (uc != null)
-                uc.SaveLayout();
-
+            if (UserControl != null)
+                UserControl.Closing();
 
             string root = "PopUpForm" + refname;
             SQLiteDBClass.PutSettingInt(root + "Width", this.Width);
@@ -106,8 +125,8 @@ namespace EDDiscovery.Forms
 
         public UserControlCommonBase FindUserControl(Type c)
         {
-            if (uc.GetType().Equals(c))
-                return uc;
+            if (UserControl.GetType().Equals(c))
+                return UserControl;
             else
                 return null;
         }
@@ -122,14 +141,50 @@ namespace EDDiscovery.Forms
             this.WindowState = FormWindowState.Minimized;
         }
 
+        private void panel_ontop_Click(object sender, EventArgs e)
+        {
+            TopMost = !TopMost;
+            panel_ontop.ImageSelected = TopMost ? ExtendedControls.DrawnPanel.ImageType.OnTop : ExtendedControls.DrawnPanel.ImageType.Floating;
+        }
+
         private void UserControlForm_Layout(object sender, LayoutEventArgs e)
         {
-            if (uc != null)
+            if (UserControl != null)
             {
-                uc.Location = new Point(2, windowsborder ? 2 : panel_close.Location.Y+panel_close.Height);
-                uc.Size = new Size(ClientRectangle.Width - 4, ClientRectangle.Height - uc.Location.Y - statusStripCustom1.Height);
+                UserControl.Location = new Point(3, windowsborder ? 2 : panel_close.Location.Y+panel_close.Height);
+                UserControl.Size = new Size(ClientRectangle.Width - 6, ClientRectangle.Height - UserControl.Location.Y - statusStripCustom1.Height);
             }
         }
+
+
+        private const int MF_SEPARATOR = 0x800;
+        private const int MF_STRING = 0x0;
+        private int SYSMENU_ONTOP = 0x1;
+        private const int WM_SYSCOMMAND = 0x112;
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool AppendMenu(IntPtr hMenu, int uFlags, int uIDNewItem, string lpNewItem);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool InsertMenu(IntPtr hMenu, int uPosition, int uFlags, int uIDNewItem, string lpNewItem);
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+
+            // Get a handle to a copy of this form's system (window) menu
+            IntPtr hSysMenu = GetSystemMenu(this.Handle, false);
+
+            // Add a separator
+            AppendMenu(hSysMenu, MF_SEPARATOR, 0, string.Empty);
+
+            // Add the About menu item
+            AppendMenu(hSysMenu, MF_STRING, SYSMENU_ONTOP, "&On Top");
+        }
+
 
         public const int WM_MOVE = 3;
         public const int WM_SIZE = 5;
@@ -141,6 +196,9 @@ namespace EDDiscovery.Forms
         public const int WM_NCMOUSEMOVE = 0xA0;
         public const int HT_CLIENT = 0x1;
         public const int HT_CAPTION = 0x2;
+        public const int HT_LEFT = 0xA;
+        public const int HT_RIGHT = 0xB;
+        public const int HT_BOTTOM = 0xF;
         public const int HT_BOTTOMRIGHT = 0x11;
         public const int WM_NCL_RESIZE = 0x112;
         public const int HT_RESIZE = 61448;
@@ -153,6 +211,7 @@ namespace EDDiscovery.Forms
             return message.Result;
         }
 
+
         // Mono compatibility
         private bool _window_dragging = false;
         private Point _window_dragMousePos = Point.Empty;
@@ -160,8 +219,13 @@ namespace EDDiscovery.Forms
 
         protected override void WndProc(ref Message m)
         {
+            if ((m.Msg == WM_SYSCOMMAND) && ((int)m.WParam == SYSMENU_ONTOP))
+            {
+                TopMost = !TopMost;
+            }
+
             // Compatibility movement for Mono
-            if (m.Msg == WM_LBUTTONDOWN && (int)m.WParam == 1 && !windowsborder)
+            else if (m.Msg == WM_LBUTTONDOWN && (int)m.WParam == 1 && !windowsborder)
             {
                 int x = unchecked((short)((uint)m.LParam & 0xFFFF));
                 int y = unchecked((short)((uint)m.LParam >> 16));
@@ -203,6 +267,18 @@ namespace EDDiscovery.Forms
                     if (p.X > this.ClientSize.Width - statusStripCustom1.Height && p.Y > this.ClientSize.Height - statusStripCustom1.Height)
                     {
                         m.Result = (IntPtr)HT_BOTTOMRIGHT;
+                    }
+                    else if (p.Y > this.ClientSize.Height - statusStripCustom1.Height)
+                    {
+                        m.Result = (IntPtr)HT_BOTTOM;
+                    }
+                    else if (p.X > this.ClientSize.Width - 5)       // 5 is generous.. really only a few pixels gets thru before the subwindows grabs them
+                    {
+                        m.Result = (IntPtr)HT_RIGHT;
+                    }
+                    else if (p.X < 5)
+                    {
+                        m.Result = (IntPtr)HT_LEFT;
                     }
                     else if (!windowsborder)
                     {

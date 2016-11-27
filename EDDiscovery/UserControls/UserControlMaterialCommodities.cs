@@ -14,6 +14,9 @@ namespace EDDiscovery.UserControls
 {
     public partial class UserControlMaterialCommodities : UserControlCommonBase
     {
+        private TravelHistoryControl travelhistorycontrol;
+        private EDDiscoveryForm discoveryform;
+
         public bool materials = false;
         private int displaynumber = 0;
         private int namecol, abvcol, catcol, typecol, numcol, pricecol;
@@ -34,8 +37,10 @@ namespace EDDiscovery.UserControls
             InitializeComponent();
         }
 
-        public void Init(int vn) //0=primary, 1 = first windowed version, etc
+        public override void Init( EDDiscoveryForm ed, int vn) //0=primary, 1 = first windowed version, etc
         {
+            discoveryform = ed;
+            travelhistorycontrol = ed.TravelControl;
             displaynumber = vn;
 
             dataGridViewMC.MakeDoubleBuffered();
@@ -56,15 +61,32 @@ namespace EDDiscovery.UserControls
             typecol = (materials) ? 3 : 1;
             numcol = (materials) ? 4 : 2;
             pricecol = (materials) ? -1 : 3;
+
+            travelhistorycontrol.OnTravelSelectionChanged += Display;
+
+            SetCheckBoxes();
+        }
+
+        void SetCheckBoxes()
+        {
+            checkBoxClear.Enabled = false;
+            checkBoxClear.Checked = (materials) ? EDDiscoveryForm.EDDConfig.ClearMaterials : EDDiscoveryForm.EDDConfig.ClearCommodities;
+            checkBoxClear.Enabled = true;
         }
 
         #endregion
 
         #region Display
 
+        public void Display(HistoryEntry he, HistoryList hl)
+        {
+            Display(he?.MaterialCommodity.Sort(!materials));
+        }
 
         public void Display(List<MaterialCommodities> mc)
         {
+            SetCheckBoxes();
+
             DisableEditing();
 
             last_mc = mc;
@@ -105,17 +127,11 @@ namespace EDDiscovery.UserControls
             DGVLoadColumnLayout(dataGridViewMC, DbColumnSave);
         }
 
-        public override void SaveLayout()
+        public override void Closing()
         {
             DGVSaveColumnLayout(dataGridViewMC, DbColumnSave);
-        }
 
-        private void dataGridViewMC_ColumnWidthChanged(object sender, DataGridViewColumnEventArgs e)
-        {
-        }
-
-        private void dataGridViewMC_Resize(object sender, EventArgs e)
-        {
+            travelhistorycontrol.OnTravelSelectionChanged -= Display;
         }
 
         #endregion
@@ -174,6 +190,19 @@ namespace EDDiscovery.UserControls
         }
 
         List<MaterialCommodities> mclist = new List<MaterialCommodities>();
+
+        private void checkBoxClear_CheckStateChanged(object sender, EventArgs e)
+        {
+            if (checkBoxClear.Enabled)
+            {
+                if (materials)
+                    EDDiscoveryForm.EDDConfig.ClearMaterials = checkBoxClear.Checked;
+                else
+                    EDDiscoveryForm.EDDConfig.ClearCommodities = checkBoxClear.Checked;
+
+                discoveryform.RecalculateHistoryDBs();
+            }
+        }
 
         private void buttonExtModify_Click(object sender, EventArgs e)
         {
@@ -260,7 +289,7 @@ namespace EDDiscovery.UserControls
                     pricechange = Math.Abs(last_mc[i].price - price) >= 0.01;
                 }
 
-                if (last_mc[i].count != numvalue || (materials || pricechange))
+                if (last_mc[i].count != numvalue || pricechange)
                 {
                     mcchange.Add(new MaterialCommodities(0, last_mc[i].category, last_mc[i].name, last_mc[i].fdname, "", "", Color.Red, 0, numvalue, (pricechange) ? price : 0));
                     //System.Diagnostics.Debug.WriteLine("Row " + i + " changed number");
@@ -274,9 +303,16 @@ namespace EDDiscovery.UserControls
                 string fdname = Tools.FDName(name);
 
                 int numvalue = 0;
-                if (int.TryParse((string)dataGridViewMC.Rows[i].Cells[numcol].Value, out numvalue) && cat.Length > 0 && name.Length > 0)
+                bool numok = int.TryParse((string)dataGridViewMC.Rows[i].Cells[numcol].Value, out numvalue);
+
+                double price = 0;
+
+                if (!materials)
+                    double.TryParse((string)dataGridViewMC.Rows[i].Cells[pricecol].Value, out price);
+
+                if ( numok && cat.Length > 0 && name.Length > 0)
                 {
-                    mcchange.Add(new MaterialCommodities(0, cat, name, fdname, "", "", Color.Red, 0, numvalue));
+                    mcchange.Add(new MaterialCommodities(0, cat, name, fdname, "", "", Color.Red, 0, numvalue , price));
                 }
             }
 
@@ -290,7 +326,7 @@ namespace EDDiscovery.UserControls
 
         private void dataGridViewMC_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine("End edit");
+            //System.Diagnostics.Debug.WriteLine("End edit");
             DataGridViewCell c = dataGridViewMC.Rows[e.RowIndex].Cells[e.ColumnIndex];
 
             if (e.ColumnIndex == numcol)

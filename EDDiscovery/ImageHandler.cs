@@ -18,6 +18,9 @@ namespace EDDiscovery2.ImageHandler
         private EDDiscoveryForm _discoveryForm;
         private FileSystemWatcher watchfolder = null;
 
+        public delegate void ScreenShot(string path, Point size);
+        public event ScreenShot OnScreenShot;
+
         public ImageHandler()
         {
             InitializeComponent();
@@ -28,7 +31,21 @@ namespace EDDiscovery2.ImageHandler
             "YYYY-MM-DD HH-MM-SS Sysname",
             "DD-MM-YYYY HH-MM-SS Sysname",
             "MM-DD-YYYY HH-MM-SS Sysname",
+            "HH-MM-SS Sysname",
+            "HH-MM-SS",
+            "Sysname",
             "Keep original"});
+            this.comboBoxSubFolder.Items.AddRange(new string[] {
+            "None",
+            "System Name",
+            "YYYY-MM-DD",
+            "DD-MM-YYYY",
+            "MM-DD-YYYY",
+            "YYYY-MM-DD Sysname",
+            "DD-MM-YYYY Sysname",
+            "MM-DD-YYYY Sysname"
+            });
+
             this.comboBoxScanFor.Items.AddRange(new string[] { "bmp -ED Launcher", "jpg -Steam" , "png -Steam" });
         }
 
@@ -48,6 +65,12 @@ namespace EDDiscovery2.ImageHandler
             try
             {
                 comboBoxFileNameFormat.SelectedIndex = SQLiteDBClass.GetSettingInt("comboBoxFileNameFormat", 0);
+            }
+            catch { }
+
+            try
+            {
+                comboBoxSubFolder.SelectedIndex = SQLiteDBClass.GetSettingInt("comboBoxSubFolder", 0);
             }
             catch { }
 
@@ -138,11 +161,7 @@ namespace EDDiscovery2.ImageHandler
         {                                                                             
             try
             {
-                string output_folder = textBoxOutputDir.Text;
-
-                if (!Directory.Exists(textBoxOutputDir.Text))
-                    Directory.CreateDirectory(textBoxOutputDir.Text);
-
+                string output_folder= "";
                 int formatindex=0;
                 bool hires=false;
                 bool cropimage = false;
@@ -156,6 +175,40 @@ namespace EDDiscovery2.ImageHandler
                 {                                                   // I've tested that this is required..      
                                                                     // cropping also picked up dialog items so moved here..
                                                                     // other items are also picked up here in one go.
+                    output_folder = textBoxOutputDir.Text;
+
+                    switch( comboBoxSubFolder.SelectedIndex )
+                    {
+                        case 1:     // system name
+                            output_folder += "\\" + Tools.SafeFileString(cur_sysname);
+                            break;
+
+                        case 2:     // "YYYY-MM-DD"
+                            output_folder += "\\" + DateTime.Now.ToString("yyyy-MM-dd");
+                            break;
+                        case 3:     // "DD-MM-YYYY"
+                            output_folder += "\\" + DateTime.Now.ToString("dd-MM-yyyy");
+                            break;
+                        case 4:     // "MM-DD-YYYY"
+                            output_folder += "\\" + DateTime.Now.ToString("MM-dd-yyyy");
+                            break;
+
+                        case 5:  //"YYYY-MM-DD Sysname",
+                            output_folder += "\\" + DateTime.Now.ToString("yyyy-MM-dd") + " " + Tools.SafeFileString(cur_sysname);
+                            break;
+
+                        case 6:  //"DD-MM-YYYY Sysname",
+                            output_folder += "\\" + DateTime.Now.ToString("dd-MM-yyyy") + " " + Tools.SafeFileString(cur_sysname);
+                            break;
+
+                        case 7: //"MM-DD-YYYY Sysname"
+                            output_folder += "\\" + DateTime.Now.ToString("MM-dd-yyyy") + " " + Tools.SafeFileString(cur_sysname);
+                            break;
+                    }
+
+                    if (!Directory.Exists(output_folder))
+                        Directory.CreateDirectory(output_folder);
+
                     formatindex = comboBoxFileNameFormat.SelectedIndex;
                     hires = checkBoxHires.Checked;
                     cropimage = checkBoxCropImage.Checked;
@@ -165,8 +218,9 @@ namespace EDDiscovery2.ImageHandler
                     crop.Height = numericUpDownHeight.Value;
                     extension = "." + comboBoxFormat.Text;
                     inputext = comboBoxScanFor.Text.Substring(0, comboBoxScanFor.Text.IndexOf(" "));
-                    cannotexecute = textBoxOutputDir.Text.Equals(textBoxScreenshotsDir.Text) && comboBoxFormat.Text.Equals(inputext);
                     copyclipboard = checkBoxCopyClipboard.Checked;
+
+                    cannotexecute = output_folder.Equals(textBoxScreenshotsDir.Text) && comboBoxFormat.Text.Equals(inputext);
                 });
 
                 if ( cannotexecute )                                // cannot store BMPs into the Elite dangerous folder as it creates a circular condition
@@ -177,7 +231,7 @@ namespace EDDiscovery2.ImageHandler
 
                 string store_name = null;
                 int index = 0;
-                do                                        // add _N on the filename for index>0, to make them unique.
+                do                                          // add _N on the filename for index>0, to make them unique.
                 {
                     store_name = Path.Combine(output_folder, CreateFileName(cur_sysname, inputfile, formatindex, hires) + (index==0?"":"_"+index) + extension);
                     index++;
@@ -240,7 +294,14 @@ namespace EDDiscovery2.ImageHandler
                 {
                     Invoke((MethodInvoker)delegate                      // pick it in a delegate as we are in another thread..
                     {                                                   // I've tested that this is required..    
-                        Clipboard.SetImage(croppedbmp);
+                        try
+                        {
+                            Clipboard.SetImage(croppedbmp);
+                        }
+                        catch
+                        {
+                            _discoveryForm.LogLineHighlight("Copying image to clipboard failed");
+                        }
                     });
                 }
 
@@ -261,6 +322,8 @@ namespace EDDiscovery2.ImageHandler
                     croppedbmp.Save(store_name, System.Drawing.Imaging.ImageFormat.Png);
                 }
 
+                Point finalsize = new Point(croppedbmp.Size);
+
                 bmp.Dispose();              // need to free the bmp before any more operations on the file..
                 croppedbmp.Dispose();       // and ensure this one is freed of handles to the file.
 
@@ -269,8 +332,16 @@ namespace EDDiscovery2.ImageHandler
 
                 if (previewinputfile)        // if preview, load in
                 {
-                    pictureBox1.ImageLocation = store_name;
-                    pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
+                    pictureBox.ImageLocation = store_name;
+                    pictureBox.SizeMode = PictureBoxSizeMode.StretchImage;
+                }
+
+                if (OnScreenShot!=null)
+                {
+                    Invoke((MethodInvoker)delegate                      // pick it in a delegate as we are in another thread..
+                    {                                                   // and fire the event
+                        OnScreenShot(store_name, finalsize);
+                    });
                 }
 
                 if (removeinputfile)         // if remove, delete original picture
@@ -290,14 +361,10 @@ namespace EDDiscovery2.ImageHandler
                 MessageBox.Show("Error in executing image conversion, try another screenshot, check output path settings. (Exception " + ex.Message + ")");
             }
         }
-                                                            // thread safe - no picking up of dialog data.
+
         private string CreateFileName(string cur_sysname, string orignalfile, int formatindex, bool hires)
-        {                                                       
-            cur_sysname = cur_sysname.Replace("*", "_star");     // fix SAG A, fix other possible file chars
-            cur_sysname = cur_sysname.Replace("/", "_slash");
-            cur_sysname = cur_sysname.Replace("\\", "_slash");
-            cur_sysname = cur_sysname.Replace(":", "_colon");
-            cur_sysname = cur_sysname.Replace("?", "_qmark");
+        {
+            cur_sysname = Tools.SafeFileString(cur_sysname);
 
             string postfix = (hires && Path.GetFileName(orignalfile).Contains("HighRes")) ? " (HighRes)" : "";
 
@@ -330,12 +397,26 @@ namespace EDDiscovery2.ImageHandler
                         return time + " " + cur_sysname + postfix;
                     }
 
+                case 5:
+                    {
+                        string time = DateTime.Now.ToString("HH-mm-ss");
+                        return time + " " + cur_sysname + postfix;
+                    }
+
+                case 6:
+                    {
+                        string time = DateTime.Now.ToString("HH-mm-ss");
+                        return time + postfix;
+                    }
+
+                case 7:
+                    {
+                        return cur_sysname + postfix;
+                    }
+
                 default:
                     return Path.GetFileNameWithoutExtension(orignalfile);
-
             }
-
-
         }
 
         private void ImageHandler_Load(object sender, EventArgs e)
@@ -393,7 +474,7 @@ namespace EDDiscovery2.ImageHandler
         private void checkBoxPreview_CheckedChanged(object sender, EventArgs e)
         {
             SQLiteDBClass.PutSettingBool("ImageHandlerPreview", checkBoxPreview.Checked);
-            pictureBox1.Image = null;
+            pictureBox.Image = null;
         }
 
         private void comboBoxFormat_SelectedIndexChanged(object sender, EventArgs e)
@@ -479,6 +560,11 @@ namespace EDDiscovery2.ImageHandler
         private void checkBoxCopyClipboard_CheckedChanged(object sender, EventArgs e)
         {
              SQLiteDBClass.PutSettingBool("ImageHandlerClipboard", checkBoxCopyClipboard.Checked);
+        }
+
+        private void comboBoxSubFolder_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            SQLiteDBClass.PutSettingInt("comboBoxSubFolder", comboBoxSubFolder.SelectedIndex);
         }
     }
 }

@@ -40,13 +40,13 @@ namespace EDDiscovery.EliteDangerous.JournalEvents
             BoostUsed = JSONHelper.GetBool(evt["BoostUsed"]);
             Faction = JSONHelper.GetStringDef(evt["Faction"]);
             FactionState = JSONHelper.GetStringDef(evt["FactionState"]);
-            Allegiance = JSONHelper.GetStringDef(evt["Allegiance"]);
-            Economy = JSONHelper.GetStringDef(evt["Economy"]);
-            Economy_Localised = JSONHelper.GetStringDef(evt["Economy_Localised"]);
-            Government = JSONHelper.GetStringDef(evt["Government"]);
-            Government_Localised = JSONHelper.GetStringDef(evt["Government_Localised"]);
-            Security = JSONHelper.GetStringDef(evt["Security"]);
-            Security_Localised = JSONHelper.GetStringDef(evt["Security_Localised"]);
+            Allegiance = JSONHelper.GetMultiStringDef(evt, new string[] { "SystemAllegiance", "Allegiance" });
+            Economy = JSONHelper.GetMultiStringDef(evt, new string[] { "SystemEconomy", "Economy" });
+            Economy_Localised = JSONHelper.GetMultiStringDef(evt, new string[] { "SystemEconomy_Localised", "Economy_Localised" });
+            Government = JSONHelper.GetMultiStringDef(evt, new string[] { "SystemGovernment", "Government" });
+            Government_Localised = JSONHelper.GetMultiStringDef(evt, new string[] { "", "SystemGovernment_Localised" });
+            Security = JSONHelper.GetMultiStringDef(evt, new string[] { "", "SystemSecurity" });
+            Security_Localised = JSONHelper.GetMultiStringDef(evt, new string[] { "", "SystemSecurity_Localised" });
             PowerplayState = JSONHelper.GetStringDef(evt["PowerplayState"]);
 
             if (!JSONHelper.IsNullOrEmptyT(evt["Powers"]))
@@ -88,6 +88,18 @@ namespace EDDiscovery.EliteDangerous.JournalEvents
                 info += " Fuel " + FuelUsed.ToString("0.0") + "t";
             detailed = ToShortString("StarSystem;JumpDist;FuelUsed");       // don't repeat these.
         }
+
+        public bool RealJournalEvent  // True if real ED 2.2+ journal event and not pre 2.2 imported.
+        {
+            get
+            {
+                if (JSONHelper.IsNullOrEmptyT(jEventData["FuelUsed"]))  // Old pre ED 2.2 messages has no Fuel used fields
+                    return false;
+                else
+                    return true;
+            }
+        }
+
 
         public int MapColor
         {

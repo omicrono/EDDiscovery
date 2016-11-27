@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.groupBox_Preview = new ExtendedControls.GroupBoxCustom();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.pictureBox = new System.Windows.Forms.PictureBox();
             this.groupBox_Prevcontrols = new ExtendedControls.GroupBoxCustom();
             this.label10 = new System.Windows.Forms.Label();
             this.groupBoxCropSettings = new ExtendedControls.GroupBoxCustom();
@@ -51,8 +51,10 @@
             this.label1 = new System.Windows.Forms.Label();
             this.textBoxFileNameExample = new ExtendedControls.TextBoxBorder();
             this.buttonChnageEDScreenshot = new ExtendedControls.ButtonExt();
+            this.label11 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
             this.textBoxOutputDir = new ExtendedControls.TextBoxBorder();
+            this.comboBoxSubFolder = new ExtendedControls.ComboBoxCustom();
             this.comboBoxFileNameFormat = new ExtendedControls.ComboBoxCustom();
             this.label2 = new System.Windows.Forms.Label();
             this.checkBoxRemove = new ExtendedControls.CheckBoxCustom();
@@ -62,7 +64,7 @@
             this.comboBoxScanFor = new ExtendedControls.ComboBoxCustom();
             this.comboBoxFormat = new ExtendedControls.ComboBoxCustom();
             this.groupBox_Preview.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).BeginInit();
             this.groupBox_Prevcontrols.SuspendLayout();
             this.groupBoxCropSettings.SuspendLayout();
             this.groupBox_Controls.SuspendLayout();
@@ -74,28 +76,28 @@
             this.groupBox_Preview.BackColorScaling = 0.5F;
             this.groupBox_Preview.BorderColor = System.Drawing.Color.LightGray;
             this.groupBox_Preview.BorderColorScaling = 0.5F;
-            this.groupBox_Preview.Controls.Add(this.pictureBox1);
+            this.groupBox_Preview.Controls.Add(this.pictureBox);
             this.groupBox_Preview.Controls.Add(this.groupBox_Prevcontrols);
             this.groupBox_Preview.Dock = System.Windows.Forms.DockStyle.Fill;
             this.groupBox_Preview.FillClientAreaWithAlternateColor = false;
-            this.groupBox_Preview.Location = new System.Drawing.Point(0, 150);
+            this.groupBox_Preview.Location = new System.Drawing.Point(0, 196);
             this.groupBox_Preview.Name = "groupBox_Preview";
-            this.groupBox_Preview.Size = new System.Drawing.Size(898, 512);
+            this.groupBox_Preview.Size = new System.Drawing.Size(898, 466);
             this.groupBox_Preview.TabIndex = 15;
             this.groupBox_Preview.TabStop = false;
             this.groupBox_Preview.TextPadding = 0;
             this.groupBox_Preview.TextStartPosition = -1;
             // 
-            // pictureBox1
+            // pictureBox
             // 
-            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pictureBox1.Location = new System.Drawing.Point(149, 16);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(746, 493);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.pictureBox1.TabIndex = 9;
-            this.pictureBox1.TabStop = false;
+            this.pictureBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.pictureBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pictureBox.Location = new System.Drawing.Point(149, 16);
+            this.pictureBox.Name = "pictureBox";
+            this.pictureBox.Size = new System.Drawing.Size(746, 447);
+            this.pictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pictureBox.TabIndex = 9;
+            this.pictureBox.TabStop = false;
             // 
             // groupBox_Prevcontrols
             // 
@@ -112,7 +114,7 @@
             this.groupBox_Prevcontrols.FillClientAreaWithAlternateColor = false;
             this.groupBox_Prevcontrols.Location = new System.Drawing.Point(3, 16);
             this.groupBox_Prevcontrols.Name = "groupBox_Prevcontrols";
-            this.groupBox_Prevcontrols.Size = new System.Drawing.Size(146, 493);
+            this.groupBox_Prevcontrols.Size = new System.Drawing.Size(146, 447);
             this.groupBox_Prevcontrols.TabIndex = 11;
             this.groupBox_Prevcontrols.TabStop = false;
             this.groupBox_Prevcontrols.TextPadding = 0;
@@ -321,8 +323,10 @@
             this.groupBox_Controls.Controls.Add(this.label1);
             this.groupBox_Controls.Controls.Add(this.textBoxFileNameExample);
             this.groupBox_Controls.Controls.Add(this.buttonChnageEDScreenshot);
+            this.groupBox_Controls.Controls.Add(this.label11);
             this.groupBox_Controls.Controls.Add(this.label4);
             this.groupBox_Controls.Controls.Add(this.textBoxOutputDir);
+            this.groupBox_Controls.Controls.Add(this.comboBoxSubFolder);
             this.groupBox_Controls.Controls.Add(this.comboBoxFileNameFormat);
             this.groupBox_Controls.Controls.Add(this.label2);
             this.groupBox_Controls.Controls.Add(this.checkBoxRemove);
@@ -335,7 +339,7 @@
             this.groupBox_Controls.FillClientAreaWithAlternateColor = false;
             this.groupBox_Controls.Location = new System.Drawing.Point(0, 0);
             this.groupBox_Controls.Name = "groupBox_Controls";
-            this.groupBox_Controls.Size = new System.Drawing.Size(898, 150);
+            this.groupBox_Controls.Size = new System.Drawing.Size(898, 196);
             this.groupBox_Controls.TabIndex = 16;
             this.groupBox_Controls.TabStop = false;
             this.groupBox_Controls.TextPadding = 0;
@@ -377,7 +381,7 @@
             this.checkBoxHires.CheckBoxInnerColor = System.Drawing.Color.White;
             this.checkBoxHires.CheckColor = System.Drawing.Color.DarkBlue;
             this.checkBoxHires.FontNerfReduction = 0.5F;
-            this.checkBoxHires.Location = new System.Drawing.Point(257, 94);
+            this.checkBoxHires.Location = new System.Drawing.Point(257, 167);
             this.checkBoxHires.MouseOverColor = System.Drawing.Color.CornflowerBlue;
             this.checkBoxHires.Name = "checkBoxHires";
             this.checkBoxHires.Size = new System.Drawing.Size(152, 17);
@@ -392,16 +396,16 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(15, 45);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(157, 13);
+            this.label1.Size = new System.Drawing.Size(143, 13);
             this.label1.TabIndex = 2;
-            this.label1.Text = "ED/Steam Screenshot directory";
+            this.label1.Text = "ED/Steam Screenshot folder";
             // 
             // textBoxFileNameExample
             // 
             this.textBoxFileNameExample.AccessibleRole = System.Windows.Forms.AccessibleRole.ScrollBar;
             this.textBoxFileNameExample.BorderColor = System.Drawing.Color.Transparent;
             this.textBoxFileNameExample.BorderColorScaling = 0.5F;
-            this.textBoxFileNameExample.Location = new System.Drawing.Point(448, 117);
+            this.textBoxFileNameExample.Location = new System.Drawing.Point(448, 128);
             this.textBoxFileNameExample.Name = "textBoxFileNameExample";
             this.textBoxFileNameExample.ReadOnly = true;
             this.textBoxFileNameExample.Size = new System.Drawing.Size(220, 20);
@@ -421,14 +425,23 @@
             this.buttonChnageEDScreenshot.UseVisualStyleBackColor = true;
             this.buttonChnageEDScreenshot.Click += new System.EventHandler(this.buttonChnageEDScreenshot_Click);
             // 
+            // label11
+            // 
+            this.label11.AutoSize = true;
+            this.label11.Location = new System.Drawing.Point(15, 100);
+            this.label11.Name = "label11";
+            this.label11.Size = new System.Drawing.Size(67, 13);
+            this.label11.TabIndex = 12;
+            this.label11.Text = "In Sub folder";
+            // 
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(15, 120);
+            this.label4.Location = new System.Drawing.Point(15, 131);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(81, 13);
+            this.label4.Size = new System.Drawing.Size(93, 13);
             this.label4.TabIndex = 12;
-            this.label4.Text = "Filename format";
+            this.label4.Text = "In Filename format";
             // 
             // textBoxOutputDir
             // 
@@ -442,6 +455,32 @@
             this.textBoxOutputDir.KeyUp += new System.Windows.Forms.KeyEventHandler(this.textBoxOutputDir_KeyUp);
             this.textBoxOutputDir.Leave += new System.EventHandler(this.textBoxOutputDir_Leave);
             // 
+            // comboBoxSubFolder
+            // 
+            this.comboBoxSubFolder.ArrowWidth = 1;
+            this.comboBoxSubFolder.BorderColor = System.Drawing.Color.Red;
+            this.comboBoxSubFolder.ButtonColorScaling = 0.5F;
+            this.comboBoxSubFolder.DataSource = null;
+            this.comboBoxSubFolder.DisplayMember = "";
+            this.comboBoxSubFolder.DropDownBackgroundColor = System.Drawing.Color.Gray;
+            this.comboBoxSubFolder.DropDownHeight = 200;
+            this.comboBoxSubFolder.DropDownWidth = 218;
+            this.comboBoxSubFolder.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.comboBoxSubFolder.ItemHeight = 13;
+            this.comboBoxSubFolder.Location = new System.Drawing.Point(214, 96);
+            this.comboBoxSubFolder.MouseOverBackgroundColor = System.Drawing.Color.Silver;
+            this.comboBoxSubFolder.Name = "comboBoxSubFolder";
+            this.comboBoxSubFolder.ScrollBarButtonColor = System.Drawing.Color.LightGray;
+            this.comboBoxSubFolder.ScrollBarColor = System.Drawing.Color.LightGray;
+            this.comboBoxSubFolder.ScrollBarWidth = 16;
+            this.comboBoxSubFolder.SelectedIndex = -1;
+            this.comboBoxSubFolder.SelectedItem = null;
+            this.comboBoxSubFolder.SelectedValue = null;
+            this.comboBoxSubFolder.Size = new System.Drawing.Size(220, 21);
+            this.comboBoxSubFolder.TabIndex = 7;
+            this.comboBoxSubFolder.ValueMember = "";
+            this.comboBoxSubFolder.SelectedIndexChanged += new System.EventHandler(this.comboBoxSubFolder_SelectedIndexChanged);
+            // 
             // comboBoxFileNameFormat
             // 
             this.comboBoxFileNameFormat.ArrowWidth = 1;
@@ -454,7 +493,7 @@
             this.comboBoxFileNameFormat.DropDownWidth = 218;
             this.comboBoxFileNameFormat.FlatStyle = System.Windows.Forms.FlatStyle.System;
             this.comboBoxFileNameFormat.ItemHeight = 13;
-            this.comboBoxFileNameFormat.Location = new System.Drawing.Point(218, 117);
+            this.comboBoxFileNameFormat.Location = new System.Drawing.Point(214, 128);
             this.comboBoxFileNameFormat.MouseOverBackgroundColor = System.Drawing.Color.Silver;
             this.comboBoxFileNameFormat.Name = "comboBoxFileNameFormat";
             this.comboBoxFileNameFormat.ScrollBarButtonColor = System.Drawing.Color.LightGray;
@@ -473,9 +512,9 @@
             this.label2.AutoSize = true;
             this.label2.Location = new System.Drawing.Point(15, 71);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(96, 13);
+            this.label2.Size = new System.Drawing.Size(124, 13);
             this.label2.TabIndex = 5;
-            this.label2.Text = "Converted pictures";
+            this.label2.Text = "Store Converted pictures";
             // 
             // checkBoxRemove
             // 
@@ -484,7 +523,7 @@
             this.checkBoxRemove.CheckBoxInnerColor = System.Drawing.Color.White;
             this.checkBoxRemove.CheckColor = System.Drawing.Color.DarkBlue;
             this.checkBoxRemove.FontNerfReduction = 0.5F;
-            this.checkBoxRemove.Location = new System.Drawing.Point(18, 94);
+            this.checkBoxRemove.Location = new System.Drawing.Point(18, 167);
             this.checkBoxRemove.MouseOverColor = System.Drawing.Color.CornflowerBlue;
             this.checkBoxRemove.Name = "checkBoxRemove";
             this.checkBoxRemove.Size = new System.Drawing.Size(212, 17);
@@ -588,7 +627,7 @@
             this.Size = new System.Drawing.Size(898, 662);
             this.Load += new System.EventHandler(this.ImageHandler_Load);
             this.groupBox_Preview.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.pictureBox)).EndInit();
             this.groupBox_Prevcontrols.ResumeLayout(false);
             this.groupBox_Prevcontrols.PerformLayout();
             this.groupBoxCropSettings.ResumeLayout(false);
@@ -610,7 +649,7 @@
         private ExtendedControls.TextBoxBorder textBoxOutputDir;
         private ExtendedControls.ComboBoxCustom comboBoxFormat;
         private System.Windows.Forms.Label label3;
-        private System.Windows.Forms.PictureBox pictureBox1;
+        private System.Windows.Forms.PictureBox pictureBox;
         private ExtendedControls.CheckBoxCustom checkBoxRemove;
         private ExtendedControls.ComboBoxCustom comboBoxFileNameFormat;
         private System.Windows.Forms.Label label4;
@@ -634,5 +673,7 @@
         private ExtendedControls.ComboBoxCustom comboBoxScanFor;
         private System.Windows.Forms.Label label10;
         private ExtendedControls.CheckBoxCustom checkBoxCopyClipboard;
+        private System.Windows.Forms.Label label11;
+        private ExtendedControls.ComboBoxCustom comboBoxSubFolder;
     }
 }

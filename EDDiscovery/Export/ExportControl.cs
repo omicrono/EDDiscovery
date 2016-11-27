@@ -11,6 +11,7 @@ using EDDiscovery.EliteDangerous;
 using System.Diagnostics;
 using EDDiscovery.EliteDangerous.JournalEvents;
 using System.IO;
+using System.Globalization;
 
 namespace EDDiscovery
 {
@@ -31,7 +32,11 @@ namespace EDDiscovery
             exportTypeList.Add(new ExportTypeClass("Exploration scans (Planets)", new ExportScan(false, true)));
             exportTypeList.Add(new ExportTypeClass("Travel history", new ExportFSDJump()));
 
+            txtExportVisited.SetAutoCompletor(EDDiscovery.DB.SystemClass.ReturnSystemListForAutoComplete);
+
         }
+
+
 
         public void InitControl(EDDiscoveryForm discoveryForm)
         {
@@ -42,6 +47,12 @@ namespace EDDiscovery
         private void ExportControl_Load(object sender, EventArgs e)
         {
             comboBoxCustomExportType.Items.Clear();
+
+            if (CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator.Equals("."))
+                radioButtonCustomUSAUK.Checked = true;
+            else
+                radioButtonCustomEU.Checked = true;
+
 
             foreach (ExportTypeClass exp in exportTypeList)
                 comboBoxCustomExportType.Items.Add(exp.Name);
@@ -68,6 +79,7 @@ namespace EDDiscovery
                 else
                     exptype.export.Csvformat = CSVFormat.USA_UK;
 
+                exptype.export.IncludeHeader = checkBoxCustomIncludeHeader.Checked;
                 exptype.export.GetData(_discoveryForm);
                 exptype.export.ToCSV(dlg.FileName);
                 if (checkBoxCustomAutoOpen.Checked)
@@ -92,43 +104,14 @@ namespace EDDiscovery
 
         private void buttonExportToGalmap_Click(object sender, EventArgs e)
         {
-            List< JournalEntry>  scans = new List<JournalEntry>();
-            string EDimportstarsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Frontier Developments", "Elite Dangerous");
-            string exportfilename = "";
-            var allFiles = Directory.GetFiles(EDimportstarsDir, "VisitedStarsCache.dat", SearchOption.AllDirectories);
-            //, "ImportStars.txt"
-
-            if (allFiles.Count<string>()==0)
+            List<JournalEntry> scans = new List<JournalEntry>();
+            String folder = findVisitedStarsCacheDirectory();
+            if (folder == null)
             {
                 MessageBox.Show("Could not find VisitedStarsCache.dat file");
                 return;
             }
-
-            if (allFiles.Count<string>() == 1)  // signle account  just export
-            {
-                exportfilename = Path.Combine(Path.GetDirectoryName(allFiles[0]), "ImportStars.txt") ;
-            }
-            else  // Many commanders found.   
-            {
-                if (MessageBox.Show("Multiple commanders found. Will export to latest played in Elite Dangerous", "Export info", MessageBoxButtons.OKCancel) == DialogResult.OK)
-                {
-                    DirectoryInfo newesetDi=null;
-                    for (int ii=0; ii< allFiles.Count<string>();ii++)
-                    {
-                        DirectoryInfo di = new DirectoryInfo(Path.GetDirectoryName(allFiles[ii]));
-
-                        if (newesetDi == null)
-                            newesetDi = di;
-
-                        if (di.LastWriteTimeUtc > newesetDi.LastWriteTimeUtc)
-                            newesetDi = di;
-                    }
-
-                    exportfilename = Path.Combine(newesetDi.FullName, "ImportStars.txt");
-                }
-            }
-
-
+           String exportfilename = Path.Combine(folder, "ImportStars.txt");
 
 
             scans = JournalEntry.GetByEventType(JournalTypeEnum.FSDJump, EDDiscoveryForm.EDDConfig.CurrentCmdrID, new DateTime (2014, 1,1), DateTime.UtcNow) ;
@@ -143,15 +126,80 @@ namespace EDDiscovery
                     writer.WriteLine(system);
                 }
             }
+
+            MessageBox.Show(this,"ImportStars.txt has been created in " + exportfilename + Environment.NewLine + "Restart Elite Dangerous to have this file read into the galaxy map");
         }
 
         private void tableLayoutPanel1_Paint(object sender, PaintEventArgs e)
         {
 
         }
+
+        private void buttonExportToFilteredSystems_Click(object sender, EventArgs e)
+        {
+            new ExportFilteredSystems().Execute(txtExportVisited.Text);
+
+        }
+
+        String findVisitedStarsCacheDirectory()
+        {
+            string EDimportstarsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Frontier Developments", "Elite Dangerous");
+            var allFiles = Directory.GetFiles(EDimportstarsDir, "VisitedStarsCache.dat", SearchOption.AllDirectories);
+
+            if (allFiles.Count<string>() == 0)
+            {
+                return null;
+            }
+
+            String folder = null;
+            if (allFiles.Count<string>() > 1)  // signle account  just export
+            {
+                MessageBox.Show("Multiple commanders found. Will export to latest played in Elite Dangerous");
+                DirectoryInfo newesetDi = null;
+                for (int ii = 0; ii < allFiles.Count<string>(); ii++)
+                {
+                    DirectoryInfo di = new DirectoryInfo(Path.GetDirectoryName(allFiles[ii]));
+
+                    if (newesetDi == null)
+                        newesetDi = di;
+
+                    if (di.LastWriteTimeUtc > newesetDi.LastWriteTimeUtc)
+                        newesetDi = di;
+                }
+                folder = newesetDi.FullName;
+            }
+            else
+            {
+                folder = Path.GetDirectoryName(allFiles[0]);
+            }
+
+            if (folder == null || folder.Trim().Length == 0)
+                return null;
+
+            return folder;
+        }
+
+        private void buttonExportOpenFolder_Click(object sender, EventArgs e)
+        {
+            String folder = findVisitedStarsCacheDirectory();
+            if (folder == null)
+            {
+                MessageBox.Show("Could not find VisitedStarsCache.dat file");
+                return;
+            }
+            Process.Start(folder);
+        }
+
+        string lastsys = null;
+
+        public void UpdateHistorySystem(string str)
+        {
+            lastsys = str;
+        }
+
+        private void btnExportTravel_Click(object sender, EventArgs e)
+        {
+                txtExportVisited.Text = lastsys;
+        }
     }
-
-
-  
-
 }

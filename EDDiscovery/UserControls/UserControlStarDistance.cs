@@ -24,22 +24,19 @@ namespace EDDiscovery.UserControls
             InitializeComponent();
         }
 
-        public void Init(EDDiscoveryForm form)
+        public override void Init( EDDiscoveryForm ed, int vn) //0=primary, 1 = first windowed version, etc
         {
-            _discoveryForm = form;
+            _discoveryForm = ed;
         }
-
-        public override void LoadLayout() { }
-        public override void SaveLayout() { }
 
         public void FillGrid(string name, SortedList<double, ISystem> csl)
         {
-            labelclosests.Text = "";
+            SetControlText("");
             dataGridViewNearest.Rows.Clear();
 
             if (csl.Count() > 0)
             {
-                labelclosests.Text = "Closest systems from " + name;
+                SetControlText("Closest systems from " + name);
                 foreach (KeyValuePair<double, ISystem> tvp in csl)
                 {
                     object[] rowobj = { tvp.Value.name, Math.Sqrt(tvp.Key).ToString("0.00") };       // distances are stored squared for speed, back to normal.

@@ -243,5 +243,22 @@ namespace EDDiscovery
             string n = new string(normal.ToCharArray().Where(c => !Char.IsWhiteSpace(c)).ToArray());
             return n.ToLower();
         }
+
+        public static string SafeFileString(string normal)
+        {
+            normal = normal.Replace("*", "_star");     
+            normal = normal.Replace("/", "_slash");
+            normal = normal.Replace("\\", "_slash");
+            normal = normal.Replace(":", "_colon");
+            normal = normal.Replace("?", "_qmark");
+
+            string ret = "";
+            foreach( char c in normal )
+            {
+                if (char.IsLetterOrDigit(c) || c == ' ' || c == '-' || c== '_' )
+                    ret += c;
+            }
+            return ret;
+        }
     }
 }
